@@ -1,0 +1,387 @@
+<html>
+<head>
+<title>HDC</title>
+<style>
+#map {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  
+}
+
+@keyframes fade { 
+  from { opacity: 0.3; } 
+}
+
+.blinking {
+  animation: fade 0.1s infinite alternate; 
+  
+}
+.my-div-icon
+{
+font-size:20px;
+font-weight:bold;
+color:#e2d628;
+}
+</style>
+
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.css" />
+<!--[if lte IE 8]><link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.ie.css" /><![endif]-->
+
+<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+<script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.2.3/leaflet.draw.js"></script>
+
+<script language="javascript">
+(function($) {
+	$(document).ready(function() {
+var marker;
+var marker1=new Array();
+var marker1_new=new Array();
+var notes_new=new Array();
+var markers_path=new Array();
+var poly=new Array();
+var polyline;
+var i=0;
+var j,k=5;
+var f,q;
+var p=0;
+var a=0,b,c,d=0;
+var search;
+//var count=0;
+var markerGroup;
+var notes=new Array();
+	var map = L.map("map", {
+    zoomControl: false
+});
+	 L.control.zoom({
+     position:'topright'
+}).addTo(map);
+
+ L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
+
+	
+var hdc = new L.LatLng( 22.015500,  88.066250);
+map.setView(hdc,15);
+var a= "gate1";
+//----------------------------gate names----------------
+var myIcon = L.divIcon({ 
+    iconSize: new L.Point(0, 0), 
+ className:'my-div-icon',
+    html: a
+});
+L.marker([22.015500,  88.066250], {icon: myIcon}).addTo(map).bindPopup('divIcon CSS3 popup. <br> Supposed to be easily stylable.');
+//------------------------------------------------------------
+auditPolygons();
+function auditPolygons() {
+			/* sync the notes from DB every second */
+			$.ajax({
+				url: "http://localhost/polycoord.php",
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json; charset=utf-8",
+				cache: false,
+				success: function(data){
+                           clear();
+						   
+						$.each(data, function(index, element) {
+                                var sides=element.sides;
+								q=0;
+								var x=new Array();
+								for (var key in element) {
+                                  x[q++]=element[key]
+								  //alert(x[]);
+                              }
+							  f=0;
+							  for(z=0;z<sides*2;z=z+2)
+							  {
+							 // alert(x[z]+" "+x[z+1]);
+								var latlng=new L.latLng(x[z],x[z+1]);
+								poly[f]=latlng;	
+                              f++;							   
+							}
+							var polygon = L.polygon(poly, {color: 'red'}).addTo(map);
+						     map.fitBounds(polygon.getBounds());
+							
+				});
+						
+			  },
+				error: function(xhr,status,error){
+						// alert('status code: '+xhr.status+' errorThrown: ' + error + ' responseText: '+xhr.responseText);
+					}
+					
+			});
+			//marker1[k].openPopup();
+		};
+		
+
+ // var latlngs = [[22.032386, 88.082381],[22.041198,88.084871],[22.051198,88.099999]];
+//var polygon = L.polygon(latlngs, {color: 'red'}).addTo(map);
+// zoom the map to the polygon
+//map.fitBounds(polygon.getBounds());
+var orangeIcon = new L.Icon({
+  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+var greenIcon = new L.Icon({
+  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+var redIcon = new L.Icon({
+  iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+
+
+
+
+//isMarkerInsidePolygon(marker,polygon);
+var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© %lt;a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+    }),
+    sat =L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+});
+var baseMaps = {
+    "OpenStreetMap": osm,
+    "SatelliteView": sat
+};
+var overlays =  {
+    };
+L.control.layers(baseMaps,overlays, {position: 'topright'}).addTo(map);
+//setTimeout(auditAssets, 10000);
+auditAssets();
+
+
+function auditAssets() {
+			/* sync the notes from DB every second */
+			$.ajax({
+				url: "http://223.31.199.29/Account/GPS_Values_Form.aspx",
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json; charset=utf-8",
+				cache: false,
+				success: function(data){
+                           clear();
+						   i=0;
+						$.each(data, function(index, element) {
+							//new_notes.push({ lat: element.latitude, lng: element.longtitude, note: element.disp_note, asset_type: element.asset_type, asset_id: element.asset_id });
+							marker=L.marker([element.latitude,element.longtitude])
+							               
+			if(element.status=="3")
+				{		
+				marker=L.marker([element.latitude,element.longtitude],{icon:orangeIcon}).addTo(map);										
+			  	}
+			else if(element.status=="2")
+			{
+			marker=L.marker([element.latitude,element.longtitude],{icon:redIcon}).addTo(map);
+			}
+			else
+			{
+			marker=L.marker([element.latitude,element.longtitude],{icon:greenIcon}).addTo(map);
+			}
+			marker.bindPopup("<b>"+element.disp_note+"</b>");//.openPopup();
+						marker1[i]=marker;
+							notes[i++]=element.disp_note;		
+				});
+						
+					//plot();
+					//setTimeout(auditAssets, 10000);
+						//marker1[k].openPopup();
+                    	//audit_notes(old_notes, new_notes);
+					},
+				error: function(xhr,status,error){
+						// alert('status code: '+xhr.status+' errorThrown: ' + error + ' responseText: '+xhr.responseText);
+					}
+					
+			});
+			//marker1[k].openPopup();
+			setTimeout(auditAssets, 5000);
+		};
+		
+// zoom the map to the polyline
+//map.fitBounds(polyline.getBounds());
+
+		function clear()
+		{
+		 for(j=0;j<i;j++)
+             {
+			    map.removeLayer(marker1[j]);
+			 }		 
+		};
+		
+		$("#locateButton").click(function(e){
+			var srch_txt = $("#txtVal").val();
+  		 var num=0,p; 
+		for(j=0;j<i;j++)
+			{
+                           
+			 var str=notes[j];
+			    if(str.search(srch_txt)!=-1)
+				{		
+				num=num+1;
+				   p=j;
+				  // alert(num);
+			  	}
+			}
+					if(num==1)
+					{
+					var value3=notes[p].toString();
+					var value1=(marker1[p].getLatLng().lat).toString();
+					var value2=( marker1[p].getLatLng().lng).toString();
+					//alert(marker1[p].getLatLng().lat+" "+marker1[p].getLatLng().lng);
+					//var queryString = "?para1=" + marker1[p].getLatLng().lat + "&para2=" + marker1[p].getLatLng().lng;
+var queryString = "?para1=" + value1+ "&para2=" + value2+ "&para3=" + value3;
+				       window.location.href= "locate2.html" + queryString;
+					   
+						
+					   /*marker1[p].openPopup();
+                       map.panTo(marker1[p].getLatLng());
+                       e.stopPropagation();
+                       e.preventDefault();*/
+				    }
+				    else if(num==0)
+				   {
+				   alert("\"" + srch_txt + "\" did not match any !");
+				   
+				   }
+				   else
+				  {
+				   	alert("\"" + srch_txt + "\" matches many !");
+				  }		
+		});
+		
+		$("#showButton").click(function(e){
+			var srch_txt = $("#txtVal").val();
+			var value1=srch_txt.toString();
+			var queryString= "?para1=" + value1;
+				       window.location.href= "path3.html" + queryString;
+			/*$.ajax({
+				url: "http://223.31.199.29/Account/GPS_Values_Form.aspx?Type=Path&VehicleNo="+srch_txt,
+				type: "GET",
+				dataType: "json",
+				contentType: "application/json; charset=utf-8",
+				cache: false,
+				success: function(data){
+				        if(d!=0)
+                          clear_line();
+                        d++;						
+						a=0;
+						$.each(data, function(index, element) {
+							//new_notes.push({ lat: element.latitude, lng: element.longtitude, note: element.disp_note, asset_type: element.asset_type, asset_id: element.asset_id });
+							marker=L.marker([element.latitude,element.longtitude]);
+							if(a==0)
+							marker.addTo(map);
+					        marker1_new[a]=new L.LatLng(element.latitude,element.longtitude);
+                       markers_path[a++]=marker;
+                       if(element.status==1)	
+                         search="<br/>DriverInfo:"+element.disp_note+"<br/>AssetId:"+element.asset_id;			   
+			            else
+						search="<br/>AssetId:"+element.asset_id;
+					 });
+						marker.addTo(map);
+						polyline = L.polyline(marker1_new, {color: 'blue'});
+						map.addLayer(polyline);
+		
+var arrowPolyline = L.Polyline.extend({
+    addArrows: function(){
+        var points = this.getLatLngs()
+        for (var p = 0; p +1 < points.length; p++){ 
+            var diffLat = points[p+1]["lat"] - points[p]["lat"]
+            var diffLng = points[p+1]["lng"] - points[p]["lng"]
+            var center = [points[p]["lat"] + diffLat/2,points[p]["lng"] + diffLng/2]
+            var angle = 360 - (Math.atan2(diffLat, diffLng)*57.295779513082)
+            var arrowM = new L.marker(center,{
+               icon: new L.divIcon({ 
+                   className : "arrowIcon",
+                   iconSize: new L.Point(30,30), 
+                   iconAnchor: new L.Point(15,15), 
+                   html : "<div style = 'font-size: 20px; -webkit-transform: rotate("+ angle +"deg)'>&#10152;</div>"
+               })
+            }).addTo(map);
+        }
+    }
+}
+)
+var poly=new arrowPolyline(marker1_new, {color: 'red'}).addTo(map);
+poly.addArrows();
+ 		
+						var popup = L.popup()
+                   .setLatLng(marker1_new[0])
+                     .setContent("starting lat:"+marker1_new[0].lat+" lng:"+marker1_new[0].lng+"<br/>Ending lat:"+marker1_new[a-1].lat+" lng:"+marker1_new[a-1].lng+"  "+search)
+                 .openOn(map);
+						map.fitBounds(polyline.getBounds());
+						
+					},
+				error: function(xhr,status,error){
+						// alert('status code: '+xhr.status+' errorThrown: ' + error + ' responseText: '+xhr.responseText);
+					}
+					
+			});*/
+		});
+		function clear_line()
+		{
+	           //alert(marker1_new[0].lat+" "+marker1_new[0].lng);
+//alert(marker1_new[a-1].lat+" "+marker1_new[a-1].lng);			   
+				 map.removeLayer(polyline);
+				    map.removeLayer(markers_path[0]);
+		    map.removeLayer(markers_path[a-1]);
+			
+		};
+
+
+});
+})(jQuery);
+function isMarkerInsidePolygon(marker, poly) {
+    var polyPoints = poly.getLatLngs();       
+    var x = marker.getLatLng().lat, y = marker.getLatLng().lng;
+
+    var inside = false;
+    for (var i = 0, j = polyPoints.length - 1; i < polyPoints.length; j = i++) {
+        var xi = polyPoints[i].lat, yi = polyPoints[i].lng;
+        var xj = polyPoints[j].lat, yj = polyPoints[j].lng;
+
+        var intersect = ((yi > y) != (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}; 
+</script>
+</head>
+<body>
+<div id="map" style="height: 100%">
+     <div id="formdiv" style="position:relative; z-index:1">
+			<select id="optSelect">
+				<option value="byRegNo">Vehicle No.</option>
+				<option value="byPermit">Permit No.</option>
+			</select>
+			<input type="text" id="txtVal" value="">
+			<input type="button" id="locateButton" value="Locate">
+			<input type="button" id="showButton" value="Show Path">
+			<input type="button" id="clearButton" value="Clear Path">
+			<br/><br/>
+		</div>
+ </div>
+</body>
+</html>
