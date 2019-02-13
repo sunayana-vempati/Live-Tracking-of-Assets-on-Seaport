@@ -7,9 +7,10 @@ Whenever an asset enters a restricted zone, when permit is expired/expires/inval
 
 Main featues:
 
-Searching an asset.
-Plotting the path traversed by the assets
-Marking the restricted Zones.
-Generating alert when a vehicle enters a restricted zone/ permit is invalid or expired.
+•	Searching an asset.
+•	Plotting the path traversed by the assets
+•	Marking the restricted Zones.
+•	Generating alert when a vehicle enters a restricted zone/ permit is invalid or expired.
+
 
 
